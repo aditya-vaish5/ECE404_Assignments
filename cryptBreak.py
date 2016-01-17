@@ -1,1 +1,6 @@
-#ECE404 HW #1 - Brute-force attack on encryptforfun.py
+#HW: #1
+#Name: Michael Baio
+#ECN Login: mbaio
+#Due Date: 1/21/16
+
+print "Hello world!"
