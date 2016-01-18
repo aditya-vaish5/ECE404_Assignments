@@ -44,8 +44,9 @@ for i in range(0,len(PassPhrase) // numbytes):                                #(
 key = None
 if sys.version_info[0] == 3:                                                  #(J)
     key = input("\nEnter key: ")                                              #(K)
-else:                                                                         
+else:
     key = raw_input("\nEnter key: ")                                          #(L)
+print "\nEncrypt key: "+key+"\n"
 key = key.strip()                                                             #(M)
 
 # Reduce the key to a bit array of size BLOCKSIZE:
@@ -69,7 +70,7 @@ while (bv.more_to_read):                                                      #(
     previous_block = bv_read.deep_copy()                                      #(a)
     msg_encrypted_bv += bv_read                                               #(b)
 
-# Convert the encrypted bitvector into a hex string:    
+# Convert the encrypted bitvector into a hex string:
 outputhex = msg_encrypted_bv.get_hex_string_from_bitvector()                  #(c)
 
 # Write ciphertext bitvector to the output file:

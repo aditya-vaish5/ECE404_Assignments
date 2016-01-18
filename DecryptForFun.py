@@ -45,11 +45,12 @@ FILEIN = open(sys.argv[1])                                                  #(J)
 encrypted_bv = BitVector( hexstring = FILEIN.read() )                       #(K)
 
 # Get key from user:
-key = None                                                          
+key = None
 if sys.version_info[0] == 3:                                                #(L)
     key = input("\nEnter key: ")                                            #(M)
-else:                                                               
+else:
     key = raw_input("\nEnter key: ")                                        #(N)
+print "\nDecrypt key: "+key+"\n"
 key = key.strip()                                                           #(O)
 
 # Reduce the key to a bit array of size BLOCKSIZE:
@@ -71,7 +72,7 @@ for i in range(0, len(encrypted_bv) // BLOCKSIZE):                          #(V)
     bv ^=  key_bv                                                           #(a)
     msg_decrypted_bv += bv                                                  #(b)
 
-# Extract plaintext from the decrypted bitvector:    
+# Extract plaintext from the decrypted bitvector:
 outputtext = msg_decrypted_bv.get_text_from_bitvector()                     #(c)
 
 # Write plaintext to the output file:
