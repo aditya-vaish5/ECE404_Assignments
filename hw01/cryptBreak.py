@@ -42,14 +42,15 @@ encrypted_bv = BitVector( hexstring = FILEIN.read() )                       #(K)
 
 
 # Create a bitvector for storing the decrypted plaintext bit array:
-msg_decrypted_bv = BitVector( size = 0 )                                    #(T)
+                                  #(T)
 
 ind = 0
-for word in itertools.product('01',repeat=16):
-    char = ''.join(word)
-    key_bv = BitVector(bitstring = char)
+for char in range(0,65536):
+    key_bv = BitVector(intVal = char)
     ind = ind + 1
     print ind
+
+    msg_decrypted_bv = BitVector( size = 0 )
     #print key_bv
 # Carry out differential XORing of bit blocks and decryption:
     previous_decrypted_block = bv_iv                                            #(U)
@@ -59,9 +60,7 @@ for word in itertools.product('01',repeat=16):
         bv ^=  previous_decrypted_block                                         #(Y)
         previous_decrypted_block = temp                                         #(Z)
         bv ^=  key_bv                                                           #(a)
-        msg_decrypted_bv += bv
-        if ord(bv.get_text_from_bitvector()[0]) < 32 or ord(bv.get_text_from_bitvector()[1]) < 32 or ord(bv.get_text_from_bitvector()[0]) > 126 or ord(bv.get_text_from_bitvector()[1]) > 126:
-            break                                #(b)
+        msg_decrypted_bv += bv                                #(b)
 
     # Extract plaintext from the decrypted bitvector:
     outputtext = msg_decrypted_bv.get_text_from_bitvector()
