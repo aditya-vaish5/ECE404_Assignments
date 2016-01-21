@@ -1,0 +1,5 @@
+This is an example of a real life message that may be seen.
+
+Even though it is easier to crack since you know how long each word is,
+the vigenere cipher has no way around this because it is all based off of
+offsets of alpha characters
