@@ -8,27 +8,78 @@
 import sys
 import subprocess
 from subprocess import Popen, PIPE
+import itertools
+from itertools import *
+from binascii import *
+from BitVector import *
+import time
 
-print "\nThis is the message to be encrypted:"
-subprocess.call(['cat message2.txt'],shell=True)
-key = raw_input('Enter the pass key for encryption: ')
-p = Popen(['./EncryptForFun.py message2.txt output2.txt'],stdin=PIPE,shell=True)
-output = p.communicate(key)
-print "\nThis is the encrypted file:"
-subprocess.call(['cat output.txt'],shell=True)
-key2 = raw_input('\nEnter the pass key for decryption: ')
-p2 = Popen(['./DecryptForFun.py output2.txt output_decrypt2.txt'],stdin=PIPE,shell=True)
-output2 = p2.communicate(key2)
-print "\nThis is the decrypted file:"
-subprocess.call(['cat output_decrypt2.txt'],shell=True)
-'''
-import optparse
 
-parser = optparse.OptionParser()
-parser.add_option('-b',dest='brute', help='Brute Force')
-parser.add_option('-p',dest='passw', help='Password')
+if len(sys.argv) is not 3:                                                  #(B)
+    sys.exit('''Needs two command-line arguments, one for '''
+             '''the encrypted file and the other for the '''
+             '''decrypted output file''')
 
-(options, args) = parser.parse_args()
+PassPhrase = "Hopes and dreams of a million years"
 
-if str(options.passw) != "":
-    '''
+BLOCKSIZE = 16                                                            #(D)
+numbytes = BLOCKSIZE // 8
+
+start_time = time.time()                                          #(E)
+
+
+
+
+# Reduce the passphrase to a bit array of size BLOCKSIZE:
+bv_iv = BitVector(bitlist = [0]*BLOCKSIZE)                                  #(F)
+for i in range(0,len(PassPhrase) // numbytes):                              #(G)
+    textstr = PassPhrase[i*numbytes:(i+1)*numbytes]                         #(H)
+    bv_iv ^= BitVector( textstring = textstr )                              #(I)
+
+# Create a bitvector from the ciphertext hex string:
+FILEIN = open(sys.argv[1])                                                  #(J)
+encrypted_bv = BitVector( hexstring = FILEIN.read() )                       #(K)
+
+
+# Create a bitvector for storing the decrypted plaintext bit array:
+msg_decrypted_bv = BitVector( size = 0 )                                    #(T)
+
+ind = 0
+for word in itertools.product('01',repeat=16):
+    char = ''.join(word)
+    key_bv = BitVector(bitstring = char)
+    ind = ind + 1
+    print ind
+    #print key_bv
+# Carry out differential XORing of bit blocks and decryption:
+    previous_decrypted_block = bv_iv                                            #(U)
+    for i in range(0, len(encrypted_bv) // BLOCKSIZE):                          #(V)
+        bv = encrypted_bv[i*BLOCKSIZE:(i+1)*BLOCKSIZE]                          #(W)
+        temp = bv.deep_copy()                                                   #(X)
+        bv ^=  previous_decrypted_block                                         #(Y)
+        previous_decrypted_block = temp                                         #(Z)
+        bv ^=  key_bv                                                           #(a)
+        msg_decrypted_bv += bv
+        if ord(bv.get_text_from_bitvector()[0]) < 32 or ord(bv.get_text_from_bitvector()[1]) < 32 or ord(bv.get_text_from_bitvector()[0]) > 126 or ord(bv.get_text_from_bitvector()[1]) > 126:
+            break                                #(b)
+
+    # Extract plaintext from the decrypted bitvector:
+    outputtext = msg_decrypted_bv.get_text_from_bitvector()
+
+    if outputtext.find("funerals") != -1:
+        print "\n\n***FOUND FUNERALS***\n\n"
+        print "key:"
+        print key_bv
+        FILEOUT = open(sys.argv[2], 'w')                                            #(d)
+        FILEOUT.write(outputtext)                                                   #(e)
+        FILEOUT.close()
+        break
+
+print ("Time taken: %s seconds\n" % (time.time() - start_time))
+
+
+                        #(c)
+
+# Write plaintext to the output file:
+
+                                                   #(f)
