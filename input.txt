@@ -1,1 +1,1 @@
-this is a test message to encrypt
+This is a test Encryption. This is cool

@@ -55,5 +55,37 @@ while (inp_len - key_len > 0):
         key_string = ''.join([key_string,key_string[:diff]])
     key_len = len(key_string)
 
-print key_string
-print inp_string
+out_string = ""
+
+for ind in range(0,inp_len):
+    inp_asc = ord(inp_string[ind])
+    key_asc = ord(key_string[ind])
+    if (inp_string[ind].isalpha()):
+        if key_asc < 91:
+            shift = key_asc - 65
+        else:
+            shift = key_asc - 71
+
+        out_asc = inp_asc + shift
+        if inp_asc < 91:
+            if out_asc > 90:
+                out_asc = out_asc + 6
+            if out_asc > 122:
+                out_asc = out_asc - 58
+            if out_asc > 90 and out_asc < 97:
+                out_asc = out_asc + 6
+        else:
+            if out_asc > 122:
+                out_asc = out_asc - 58
+            if out_asc > 90 and out_asc < 97:
+                out_asc = out_asc + 6
+            if out_asc > 122:
+                out_asc = out_asc - 58
+
+        out_string = ''.join([out_string,chr(out_asc)])
+    else:
+        out_string = ''.join([out_string,chr(inp_asc)])
+
+print "Key:\t\t",key_string
+print "Input\t\t",inp_string
+print "Encrypted:\t",out_string
