@@ -3,7 +3,8 @@
 ### hw2_starter.py
 
 import sys
-import BitVector
+from BitVector import *
+#import BitVector
 
 ################################   Initial setup  ################################
 
@@ -62,14 +63,14 @@ def get_encryption_key(): # key
     ## make sure it satisfies any constraints on the key
     valid = False;
     while not valid:
-        user-supplied_key = raw_input("Enter 8 character key: ")
-        if len(user-supplied_key) != 8:
+        user_supplied_key = raw_input("Enter 8 character key: ")
+        if len(user_supplied_key) != 8:
             print "Error: Key is not 8 characters"
         else:
             valid = True
     ## next, construct a BitVector from the key
-    user_key_bv = BitVector(text = user-supplied_key)
-    key_bv = user_key_bv.permute( initial_permutation )        ## permute() is a BitVector function
+    user_key_bv = BitVector(textstring = user_supplied_key)
+    key_bv = user_key_bv.permute( key_permutation_1 )        ## permute() is a BitVector function
     return key_bv
 
 
@@ -94,6 +95,7 @@ def des(encrypt_or_decrypt, input_file, output_file, key ):
     bitvec = bv.read_bits_from_file( 64 )   ## assumes that your file has an integral
                                             ## multiple of 8 bytes. If not, you must pad it.
     print bitvec
+    print bitvec.get_text_from_bitvector()
     [LE, RE] = bitvec.divide_into_two()
     #for i in range(16):
         ## write code to carry out 16 rounds of processing
