@@ -72,7 +72,6 @@ def get_encryption_key(): # key
 def extract_round_key( nkey ): # round key
     round_key = [0] * 16
     for i in range(16):
-
          [left,right] = nkey.divide_into_two()   ## divide_into_two() is a BitVector function
          left << shifts_key_halvs[i]
          right << shifts_key_halvs[i]
@@ -81,20 +80,14 @@ def extract_round_key( nkey ): # round key
          round_key[i] = appen
          ##  the rest of the code
          ##
-    print "********** R O U N D  K E Y **********"
-    for i in range(16):
-        print i,round_key[i]
-    print ""
-    print ""
     return round_key
 
 
 ########################## encryption and decryption #############################
 
 def des(encrypt_or_decrypt, input_file, output_file, key ):
-
+    #make sure it is an increment of 8 bytes
     file_size = os.path.getsize(input_file)
-    print "******SIZE****",file_size
     if file_size % 8 != 0:
         with open(input_file,"a") as filein:
             for i in range(0,file_size % 8):
@@ -103,6 +96,7 @@ def des(encrypt_or_decrypt, input_file, output_file, key ):
     os.remove(output_file)
     FILEOUT = open( output_file, 'ab' )
 
+    #get all s box arrays
     s1 = get_sbox("1")
     s2 = get_sbox("2")
     s3 = get_sbox("3")
@@ -111,45 +105,32 @@ def des(encrypt_or_decrypt, input_file, output_file, key ):
     s6 = get_sbox("6")
     s7 = get_sbox("7")
     s8 = get_sbox("8")
+    # keep reading 64 bits at a time
     while (bv.more_to_read):
-        print "ENCRYPT OR DECRYPT  ",encrypt_or_decrypt
         bitvec = bv.read_bits_from_file( 64 )
+        #if decrpyting, have to switch the place of the first bitvector
         if encrypt_or_decrypt == "decrypt":
             [lt, rt] = bitvec.divide_into_two()
             bitvec = rt + lt
            ## assumes that your file has an integral
-        print "*******R E A D  F I L E *********"
-        print "Bitvector Read: ",bitvec,len(bitvec)
-        print "Text Read: ",bitvec.get_text_from_bitvector()
-        print ""
+        #iterate through all 16 rounds
         for i in range(16):
             #Split into 2
-            print "******************"
-            print "ROUND",i
             [LE, RE] = bitvec.divide_into_two()
-            print ""
-            print "Splitting:"
-            print "LE: ",LE,len(LE)
-            print "RE: ",RE,len(RE)
             temp = LE
             #Set Left equal to right
             LE = RE
-            #print "At split,",len(LE),len(RE)
+
             #Expansion permutation
             RE = RE.permute( expansion_permutation )
-            print ""
-            print "Expanding RE:",RE,len(RE)
-            #print "After expansion:",len(RE)
+
             #XOR with round key
             if encrypt_or_decrypt == "encrypt":
                 RE ^= key[i] # round key in order
             else:
                 RE ^= key[15-i] # reverse if decryption
-            print ""
-            print "RE after xor:",RE,len(RE)
+
             #Separate into 8 groups of 6 bits
-            print ""
-            print "8 groups of 6 bits"
             b1 = RE[0:6]
             b2 = RE[6:12]
             b3 = RE[12:18]
@@ -158,17 +139,7 @@ def des(encrypt_or_decrypt, input_file, output_file, key ):
             b6 = RE[30:36]
             b7 = RE[36:42]
             b8 = RE[42:48]
-            print b1
-            print b2
-            print b3
-            print b4
-            print b5
-            print b6
-            print b7
-            print b8
 
-            #,b2,b3.b4.b5.b6.b7,b8
-            #print "Groups of 6",len(b1)
             #Generate row and column look ups
             r1 = b1.permute([0,5]).intValue()
             c1 = b1.permute([1,2,3,4]).intValue()
@@ -186,18 +157,6 @@ def des(encrypt_or_decrypt, input_file, output_file, key ):
             c7 = b7.permute([1,2,3,4]).intValue()
             r8 = b8.permute([0,5]).intValue()
             c8 = b8.permute([1,2,3,4]).intValue()
-            print ""
-            print "Row and col vals"
-            print ""
-            print "1",r1,c1
-            print "2",r2,c2
-            print "3",r3,c3
-            print "4",r4,c4
-            print "5",r5,c5
-            print "6",r6,c6
-            print "7",r7,c7
-            print "8",r8,c8
-            print ""
 
             #Get S-Box table lookup
             val1 = int(s1[r1][c1])
@@ -208,21 +167,9 @@ def des(encrypt_or_decrypt, input_file, output_file, key ):
             val6 = int(s6[r6][c6])
             val7 = int(s7[r7][c7])
             val8 = int(s8[r8][c8])
-            print ""
-            print "Vals returned"
-            print "1",val1
-            print "2",val2
-            print "3",val3
-            print "4",val4
-            print "5",val5
-            print "6",val6
-            print "7",val7
-            print "8",val8
 
             #Convert value back to bitvector
-            #print "val1:",val1
             b1 = BitVector(intVal = val1, size = 4)
-            #print "b1:",b1
             b2 = BitVector(intVal = val2, size = 4)
             b3 = BitVector(intVal = val3, size = 4)
             b4 = BitVector(intVal = val4, size = 4)
@@ -230,63 +177,32 @@ def des(encrypt_or_decrypt, input_file, output_file, key ):
             b6 = BitVector(intVal = val6, size = 4)
             b7 = BitVector(intVal = val7, size = 4)
             b8 = BitVector(intVal = val8, size = 4)
-            print ""
-            print "convert to bitvector"
-            print b1
-            print b2
-            print b3
-            print b4
-            print b5
-            print b6
-            print b7
-            print b8
-            #print "group of 4",len(b1)
+
             #combine bitvectors
             RE = b1 + b2 + b3 + b4 + b5 + b6 + b7 + b8
-            #print "should be 32",len(RE)
+
             #P-Box
             RE = RE.permute( p_box_permutation )
-            print ""
-            print "P-box permutation"
-            print "RE: ",RE
-            #XOR with Left side
-            print ""
-            print "XOR with LEFT"
-            RE ^= temp
-            print "RE: ",RE
-            bitvec = LE + RE
-            #"RESULT BITVEC: ",bitvec
 
+            #XOR with Left side
+            RE ^= temp
+
+            bitvec = LE + RE
+        # when done, have to flip back if it was decryption
         if encrypt_or_decrypt == "encrypt":
             combined = LE + RE
         else:
             combined = RE + LE
-        print combined
         outputtext = combined.get_text_from_bitvector()
-        print encrypt_or_decrypt,":",outputtext
-
+        # write to file
         combined.write_to_file(FILEOUT)
     FILEOUT.close()
-
-
-
-
-
-
-    #for i in range(16):
-        ## write code to carry out 16 rounds of processing
-
-
 
 #################################### main #######################################
 
 def main():
-    #s2 = get_sbox("2")
-    #print s2[0][3]
     key_inp = get_encryption_key()
-    #print key_inp
     round_keys = extract_round_key(key_inp)
-    #print round_keys[0]
     des("encrypt","message.txt","encrypted.txt",round_keys)
     des("decrypt","encrypted.txt","decrypted.txt",round_keys)
 
