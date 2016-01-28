@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
-### hw2_starter.py
+#HW: #2
+#Name: Michael Baio
+#ECN Login: mbaio
+#Due Date: 1/27/16
 
 import sys
 from BitVector import *
