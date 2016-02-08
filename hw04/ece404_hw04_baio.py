@@ -2,12 +2,17 @@
 
 import sys
 from BitVector import *
+import os
 
 AES_modulus = BitVector(bitstring='100011011')
 subBytesTable = []                                                  # for encryption
 invSubBytesTable = []                                               # for decryption
 statearray = [[0 for x in range(4)] for x in range(4)]
+new_statearray = [[0 for x in range(4)] for x in range(4)]
 key_schedule = []
+hex2 = BitVector (intVal = 2, size = 8)
+hex3 = BitVector (intVal = 3, size = 8)
+modulus = BitVector(bitstring = "100011011")
 rcon = [0] * 10
 rcon[0] = BitVector( hexstring = "01000000")
 rcon[1] = BitVector( hexstring = "02000000")
@@ -53,17 +58,99 @@ def encrypt():
     bv = BitVector( filename = inputfile )
     if os.path.isfile (outputfile):
         os.remove(outputfile)
-    FILEOUT = open( outputfile, 'ab' )
+    FILEOUT = open( outputfile, 'a' )
 
     while (bv.more_to_read):
+        #Read 128 bit block
         bitvec = bv.read_bits_from_file( 128 )
-
+        #XOR with first 4 words
+        bitvec ^= (key_schedule[0] + key_schedule[1] + key_schedule[2] + key_schedule[3])
+        #Generate statearray
         for i in range(4):
             for j in range(4):
-                statearray[j][i] = block[32*i + 8*j:32*i + 8*(j+1)]
+                statearray[j][i] = bitvec[32*i + 8*j:32*i + 8*(j+1)]
+        #Carry out 10 rounds
+        for i in range(10):
+            #S-box substitution
+            for j in range(4):
+                for k in range(4):
+                    statearray[j][k] = encrypt_sub(statearray[j][k])
+            #Row shifting
+            statearray[1] = [statearray[1][1],statearray[1][2],statearray[1][3],statearray[1][0]]
+            statearray[2] = [statearray[2][2],statearray[2][3],statearray[2][0],statearray[2][1]]
+            statearray[3] = [statearray[3][3],statearray[3][0],statearray[3][1],statearray[3][2]]
+            #Column Mixing
+            #Row 1:
+            for i in range(4):
+                new_statearray[0][i] = (hex2.gf_multiply_modular(statearray[0][i],modulus,8) ^
+                                        hex3.gf_multiply_modular(statearray[1][i],modulus,8) ^
+                                        statearray[2][i] ^
+                                        statearray[3][i])
+            #Row 2:
+            for i in range(4):
+                new_statearray[1][i] = (statearray[0][i] ^
+                                        hex2.gf_multiply_modular(statearray[1][i],modulus,8) ^
+                                        hex3.gf_multiply_modular(statearray[2][i],modulus,8) ^
+                                        statearray[3][i])
+            #Row 3:
+            for i in range(4):
+                new_statearray[2][i] = (statearray[0][i] ^
+                                        statearray[1][i] ^
+                                        hex2.gf_multiply_modular(statearray[2][i],modulus,8) ^
+                                        hex3.gf_multiply_modular(statearray[3][i],modulus,8))
+            #Row 4:
+            for i in range(4):
+                new_statearray[3][i] = (hex3.gf_multiply_modular(statearray[0][i],modulus,8) ^
+                                        statearray[1][i] ^
+                                        statearray[2][i] ^
+                                        hex2.gf_multiply_modular(statearray[3][i],modulus,8))
+
+            #XOR with round key
+            key = key_schedule[(i*4)+4] + key_schedule[(i*4)+5] + key_schedule[(i*4)+6] + key_schedule[(i*4)+7]
+            w1 = new_statearray[0][0] + new_statearray[1][0] + new_statearray[2][0] + new_statearray[3][0]
+            w2 = new_statearray[0][1] + new_statearray[1][1] + new_statearray[2][1] + new_statearray[3][1]
+            w3 = new_statearray[0][2] + new_statearray[1][2] + new_statearray[2][2] + new_statearray[3][2]
+            w4 = new_statearray[0][3] + new_statearray[1][3] + new_statearray[2][3] + new_statearray[3][3]
+            words = w1 + w2 + w3 + w4
+            result = key ^ words
+            for i in range(4):
+                for j in range(4):
+                    statearray[j][i] = result[32*i + 8*j:32*i + 8*(j+1)]
+
+        #Get hex string
+        outputhex = result.get_bitvector_in_hex()
+        # write to file
+        FILEOUT.write(outputhex)
+
+def decrypt():
+    outputfile = "decryptedtext.txt"
+    if os.path.isfile (outputfile):
+        os.remove(outputfile)
+    FILEOUT = open( outputfile, 'a' )
+    with open("encryptedtext.txt") as fp:
+        while True:
+            string = fp.read(32)
+            if not string:
+                break
+            bitvec = BitVector(hexstring = string)
+            #XOR with first 4 words
+            bitvec ^= (key_schedule[40] + key_schedule[41] + key_schedule[42] + key_schedule[43])
+            #Generate statearray
+            for i in range(4):
+                for j in range(4):
+                    statearray[j][i] = bitvec[32*i + 8*j:32*i + 8*(j+1)]
+            #Carry out 10 rounds
+            for i in range(10):
+                #Inverse Shift Rows
+                #Inverse S-box
+                #XOR with Round Key
+                #Inverse mix columns
+            #Get hex string
+            outputtext = result.get_text_from_bitvector()
+            # write to file
+            FILEOUT.write(outputtext)
 
 
-    combined.write_to_file(FILEOUT)
 
 def encrypt_sub(input_bv):
     [left, right] = input_bv.divide_into_two()
@@ -110,6 +197,10 @@ def main():
     genTables()
     #Generate the key-schedule
     gen_key_schedule()
+    #Encrypt
+    #encrypt()
+    #Decrypt
+    decrypt()
 
 
 if __name__ == "__main__":
